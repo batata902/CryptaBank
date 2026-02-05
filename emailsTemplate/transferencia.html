@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Comprovante de Transferência</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f4f6f8;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background-color: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      overflow: hidden;
+    }
+
+    .header {
+      background-color: #0d1b2a;
+      color: #ffffff;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: 1px;
+    }
+
+    .content {
+      padding: 25px;
+      color: #333333;
+    }
+
+    .status {
+      background-color: #e6f4ea;
+      color: #1e7e34;
+      padding: 12px;
+      border-radius: 5px;
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    .amount {
+      font-size: 22px;
+      color: #0d1b2a;
+      font-weight: bold;
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .label {
+      color: #666666;
+      font-size: 14px;
+    }
+
+    .value {
+      font-weight: bold;
+      color: #111111;
+      font-size: 14px;
+      text-align: right;
+    }
+
+    .footer {
+      background-color: #f4f6f8;
+      padding: 15px;
+      text-align: center;
+      font-size: 12px;
+      color: #777777;
+    }
+  </style>
+</head>
+<body>
+
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center">
+
+        <div class="container">
+
+          <div class="header">
+            <h1>CRYPTRADE</h1>
+            <p>Sua Corretora de Criptomoedas</p>
+          </div>
+
+          <div class="content">
+
+            <div class="status">
+              ✔ Transferência realizada com sucesso
+            </div>
+
+            <div class="amount">
+              ₿ __VDT__ BTC
+            </div>
+
+            <!-- Data -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #eeeeee; padding:10px 0;">
+              <tr>
+                <td class="label" align="left">Data</td>
+                <td class="value" align="right">__DATA__ - __HORA__</td>
+              </tr>
+            </table>
+
+            <!-- Carteira Origem -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #eeeeee; padding:10px 0;">
+              <tr>
+                <td class="label" align="left">Carteira de Origem</td>
+                <td class="value" align="right">0x__CDO__</td>
+              </tr>
+            </table>
+
+            <!-- Carteira Destino -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #eeeeee; padding:10px 0;">
+              <tr>
+                <td class="label" align="left">Carteira de Destino</td>
+                <td class="value" align="right">0x__CDD__</td>
+              </tr>
+            </table>
+
+            <!-- Taxa -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="border-bottom:1px solid #eeeeee; padding:10px 0;">
+              <tr>
+                <td class="label" align="left">Taxa da Rede</td>
+                <td class="value" align="right">₿ 0.0 BTC</td>
+              </tr>
+            </table>
+
+            <!-- TX ID -->
+            <table width="100%" cellpadding="0" cellspacing="0" style="padding:10px 0;">
+              <tr>
+                <td class="label" align="left">ID da Transação</td>
+                <td class="value" align="right">__IDT__</td>
+              </tr>
+            </table>
+
+          </div>
+
+          <div class="footer">
+            Este é um comprovante gerado automaticamente pelo sistema do <strong>Cryptrade</strong>.<br>
+            Cryptrade sempre ao seu lado.
+          </div>
+
+        </div>
+
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>
