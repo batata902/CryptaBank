@@ -24,13 +24,10 @@ class ClientHandlener:
         return key
 
     def recvdata(self):
-        raw_data = self.encrypter.dec(self.s.recv(1024))
-        data = json.loads(raw_data)
-        return data
+        return self.encrypter.dec(self.s.recv(1024))
 
     def senddata(self, raw_data):
-        raw_data = raw_data + '\nCrypta~> '
-        data = json.dumps({'REQUEST-INFO': raw_data}).encode()
+        data = raw_data + '\nCrypta~> '
         self.s.sendall(self.encrypter.enc(data))
 
     def close(self):

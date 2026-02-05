@@ -1,5 +1,6 @@
 import socket
 import threading
+import cryptography
 from dbOperations.database import Database
 from network.ClientHandlener import ClientHandlener
 from utils.EmailSender import send_email
@@ -20,8 +21,8 @@ def linha():
 
 def cadastro(client, email):
     while True:
-        client.sendData('[-] Email não está cadastrado no nosso sistema, deseja cadastra-lo? [y/n]')
-        opc = client.recvData()
+        client.senddata('[-] Email não está cadastrado no nosso sistema, deseja cadastra-lo? [y/n]')
+        opc = client.recvdata()['msg']
         if opc == 'y':
             break
         elif opc == 'n':
@@ -33,24 +34,24 @@ def cadastro(client, email):
     tentativas = 0
     while True:
         if tentativas >= 3:
+            client.close()
             return False, None
-        client.sendData('[+] Digite o código enviado para o seu email:')
-        codigo = client.recvData()
+        client.senddata('[+] Digite o código enviado para o seu email:')
+        codigo = client.recvdata()['msg']
         if code == codigo:
-            client.sendData('[+] Digite a sua nova senha!')
-            senha = client.recvData()
+            client.senddata('[+] Digite a sua nova senha!')
+            senha = client.recvdata()['msg']
             db.cadastrar(email, senha)
             return True, db.seeinfo(email, senha)['infos']
         else:
-            client.sendData('[-] Código errado! Digite novamente:')
             tentativas += 1
 
 
 def autenticar(client):
-    email = client.recvData()['msg']
+    email = client.recvdata()['msg']
     if db.email_exists(email):
-        client.sendData('[+] Digite a sua senha:')
-        senha = client.recvData()['msg']
+        client.senddata('[+] Digite a sua senha:')
+        senha = client.recvdata()['msg']
 
         login = db.login(email, senha)["login"]
         if login == "no":
@@ -60,23 +61,32 @@ def autenticar(client):
         if db.verifica_tfa(email, senha):
             code = Utils.generate_code()
             send_email(email, code, None, None, None, 'confirm-code')
-            client.sendData('[+] Digite o código enviado para o seu email:')
-            codigo = client.recvData()['msg']
+            client.senddata('[+] Digite o código enviado para o seu email:')
+            codigo = client.recvdata()['msg']
             if codigo == code:
                 return True, login
+            client.close()
             return False, None
 
         return True, login
 
     else:
-        return cadastro(client, email)
+        return True, cadastro(client, email)
 
 
 def handleclient(client):
-    success = autenticar(client)
-    if success is False:
+    try:
+        auth = autenticar(client)
+        if auth[0] is False:
+            return
+        client.senddata(f'[+] Autenticado como {auth[1]["email"]}')
+        while True:
+            cmd = client.recvdata()
+            client.senddata('Rocheda dms pivete')
+    except cryptography.fernet.InvalidToken:
+        client.close()
+        print('Cliente se desconectou')
         return
-
 
 def handlerequests(sock):
         while True:

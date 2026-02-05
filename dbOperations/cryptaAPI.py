@@ -142,11 +142,11 @@ def tfacheck():
         consulta = cur.execute('SELECT tfa FROM users WHERE email = ? AND password = ?', (email, senha))
         is_enabled = dict(consulta.fetchone())
     except TypeError:
-        return {"status": "Wrong email or password"}
+        return {'status': 'false'}
 
     if is_enabled["tfa"] == 1:
-        return True
-    return False
+        return {'status': 'true'}
+    return {'status': 'false'}
 
 @app.route('/login', methods=["POST"])
 def login():

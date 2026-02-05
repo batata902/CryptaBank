@@ -75,7 +75,10 @@ class Database:
         tfa_url = self.db_url + 'istfaenabled'
         data = {'email': email, 'pass': Utils.gethash(password)}
 
-        return self.db_post_access(tfa_url, data)
+        result = self.db_post_access(tfa_url, data)
+        if result['status'] == 'true':
+            return True
+        return False
 
     def login(self, email, password):
         login_url = self.db_url + 'login'

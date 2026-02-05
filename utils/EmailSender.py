@@ -12,9 +12,9 @@ def send_email(email, value, origin_wallet, destiny_wallet, id, type):
         DESTINO = email
 
         if type == 'confirm-code':
-                template = 'emailsTemplate/confirm_template.html'
+                template = 'emailsTemplate/confirm-code.html'
         elif type == 'transaction':
-                template = 'emailsTemplate/email_template.html'
+                template = 'emailsTemplate/transferencia.html'
         else:
                 return
 
