@@ -21,3 +21,7 @@ class Utils:
     @classmethod
     def generate_code(cls):
         return str(random.randint(0, 9999)).zfill(4)
+
+    @classmethod
+    def linha(cls):
+        return '[+]' + ('=' * 30) + '[+]'

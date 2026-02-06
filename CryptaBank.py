@@ -1,88 +1,62 @@
 import socket
 import threading
-import cryptography
-from dbOperations.database import Database
+import cryptography.fernet
 from network.ClientHandlener import ClientHandlener
-from utils.EmailSender import send_email
 from utils.utils import Utils
 
 #cores
 R = '\033[31m'
 G = '\033[32m'
-B = '\033[35m'
 Y = '\033[33m'
+B = '\033[35m'
 E = '\033[m'
 
-db = Database()
-
-def linha():
-        return '[+]' + ('='*30) + '[+]'
-
-
-def cadastro(client, email):
-    while True:
-        client.senddata('[-] Email não está cadastrado no nosso sistema, deseja cadastra-lo? [y/n]')
-        opc = client.recvdata()['msg']
-        if opc == 'y':
-            break
-        elif opc == 'n':
-            client.close()
-            return False, None
-    code = Utils.generate_code()
-    send_email(email, code, None, None, None, 'confirm-code')
-
-    tentativas = 0
-    while True:
-        if tentativas >= 3:
-            client.close()
-            return False, None
-        client.senddata('[+] Digite o código enviado para o seu email:')
-        codigo = client.recvdata()['msg']
-        if code == codigo:
-            client.senddata('[+] Digite a sua nova senha!')
-            senha = client.recvdata()['msg']
-            db.cadastrar(email, senha)
-            return True, db.seeinfo(email, senha)['infos']
-        else:
-            tentativas += 1
-
-
-def autenticar(client):
-    email = client.recvdata()['msg']
-    if db.email_exists(email):
-        client.senddata('[+] Digite a sua senha:')
-        senha = client.recvdata()['msg']
-
-        login = db.login(email, senha)["login"]
-        if login == "no":
-            client.close()
-            return False, None
-
-        if db.verifica_tfa(email, senha):
-            code = Utils.generate_code()
-            send_email(email, code, None, None, None, 'confirm-code')
-            client.senddata('[+] Digite o código enviado para o seu email:')
-            codigo = client.recvdata()['msg']
-            if codigo == code:
-                return True, login
-            client.close()
-            return False, None
-
-        return True, login
-
-    else:
-        return True, cadastro(client, email)
-
+c_help = f'''
+{Utils.linha()}
+[{G}+{E}] {G}my-wallet{E} - Ver informações da sua carteira 
+[{G}+{E}] {G}history{E} - Ver histórico de transferências
+[{G}+{E}] {G}transfer{E} [{Y}carteira-destino{E}] [{Y}quantia{E}] - Transferir dinheiro para Carteira de destino
+[{G}+{E}] {G}2fa{E} - Muda o estado da autenticação de 2 fatores para ativado ou desativado
+{Utils.linha()}
+'''
 
 def handleclient(client):
     try:
-        auth = autenticar(client)
-        if auth[0] is False:
+        success, auth = client.autenticar()
+        if success is False:
             return
-        client.senddata(f'[+] Autenticado como {auth[1]["email"]}')
+        client.senddata('clear')
+        client.recvdata()
+        client.senddata(f'[{G}+{E}] Autenticado como {B}{auth["email"]}{E}')
+        wallet = auth['wallet']
+        password = auth['password']
+
+        print(auth)
+
         while True:
-            cmd = client.recvdata()
-            client.senddata('Rocheda dms pivete')
+            cmd = client.recvdata()['msg']
+
+            if cmd == 'help':
+                client.senddata(c_help)
+                continue
+
+            elif cmd in ['clear', 'cls']:
+                client.senddata(f'[{G}+{E}] {Y}BEM VINDO AO CRYPTA BANK{E} [{G}+{E}]')
+                continue
+
+            elif cmd in ['my-wallet', 'mywallet', 'carteira', 'minhacarteira']:
+                auth = client.get_wallet(wallet, password)
+                carteira = (f'{Utils.linha()}\n'
+                            f'{G}wallet{E}: {auth["wallet"]}\n'
+                            f'{G}email{E}: {auth["email"]}\n'
+                            f'{G}creation-date{E}: {auth["data"]}\n'
+                            f'{G}currency{E}: {auth["currency"]}\n'
+                            f'{G}2FA{E}: {auth["tfa"]}\n{Utils.linha()}')
+                client.senddata(carteira)
+                continue
+
+            client.senddata(f'[{R}ERRO{E}] Comando não encontrado.')
+
     except cryptography.fernet.InvalidToken:
         client.close()
         print('Cliente se desconectou')

@@ -44,10 +44,10 @@ class Database:
     def seeinfo(self, wallet, password):
         info_url = self.db_url + 'seeinfos'
 
-        data = {'wallet': wallet, 'pass': Utils.gethash(password)}
+        data = {'wallet': wallet, 'pass': password}
 
         infos = self.db_post_access(info_url, data)
-        return infos
+        return infos['infos']
 
     def getcurrency(self, wallet, password):
         cur_url = self.db_url + 'getcurrency'

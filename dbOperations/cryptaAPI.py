@@ -162,4 +162,36 @@ def login():
 
     return {"login": infos}
 
+@app.route('/allusers', methods=['GET'])
+def allusers():
+    users = []
+    consulta = cur.execute('SELECT * FROM users;')
+    while True:
+        linhas = consulta.fetchmany(10)
+        if not linhas:
+            break
+        for linha in linhas:
+            users.append(dict(linha))
+    return users
+
+@app.route('/depositar', methods=['GET'])
+def depositar():
+    try:
+        email = request.args.get('email')
+        valor = int(request.args.get('valor'))
+    except TypeError:
+        return {'status': 'parâmetros invalidos'}
+
+    try:
+        consulta = cur.execute('SELECT currency FROM users WHERE email = ?;', (email,))
+        currency = dict(consulta.fetchone())['currency']
+    except TypeError:
+        return {'status': 'user not found'}
+
+    conn.execute('UPDATE users SET currency = ? WHERE email = ?;', (int(currency) + valor, email))
+    conn.commit()
+
+    return {'status': 'ok'}
+
+
 app.run()
