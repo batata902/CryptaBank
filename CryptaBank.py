@@ -23,6 +23,7 @@ c_help = f'''
 def handleclient(client):
     try:
         success, auth = client.autenticar()
+
         if success is False:
             return
         client.senddata('clear')
@@ -30,8 +31,6 @@ def handleclient(client):
         client.senddata(f'[{G}+{E}] Autenticado como {B}{auth["email"]}{E}')
         wallet = auth['wallet']
         password = auth['password']
-
-        print(auth)
 
         while True:
             cmd = client.recvdata()['msg']

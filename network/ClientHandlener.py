@@ -46,8 +46,7 @@ class ClientHandlener:
                 self.close()
                 return False, None
         code = Utils.generate_code()
-        print(code)
-        # send_email(email, code, None, None, None, 'confirm-code') # Envio do email
+        send_email(email, code, None, None, None, 'confirm-code') # Envio do email
 
         tentativas = 0
         while True:
@@ -88,8 +87,7 @@ class ClientHandlener:
 
             if self.db.verifica_tfa(email, senha):
                 code = Utils.generate_code()
-                print(code)
-                # send_email(email, code, None, None, None, 'confirm-code') # Envio do email
+                send_email(email, code, None, None, None, 'confirm-code') # Envio do email
                 self.senddata('[+] \033[32mDigite o código enviado para o seu email:\033[m')
                 codigo = self.recvdata()['msg']
                 if codigo == code:
@@ -103,7 +101,7 @@ class ClientHandlener:
 
         else:
             self.email = email
-            return True, self.cadastro(email)
+            return self.cadastro(email)
 
     def confirm_password(self):
         self.senddata('[+] \033[32mDigite a sua senha para confirmar a ação\033[m')
