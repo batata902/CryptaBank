@@ -34,9 +34,9 @@ class Database:
         success = self.db_post_access(cad_url, data)
         return success
 
-    def transaction(self, operation, wallet, value, password):
+    def transaction(self, operation, wallet, value):
         trans_url = self.db_url + 'updatecurrency'
-        data = {'operation': operation, 'wallet': wallet, 'nvalue': value, 'pass': Utils.gethash(password)}
+        data = {'operation': operation, 'wallet': wallet, 'nvalue': value}
 
         success = self.db_post_access(trans_url, data)
         return success

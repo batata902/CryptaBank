@@ -60,15 +60,16 @@ def updatecurrency():
 
     op = infos["operation"]
     wallet = infos["wallet"]
-    senha = infos["pass"]
     new_value = infos["nvalue"]
 
+    '''
     #autenticação
     try:
-        cur.execute('SELECT ? FROM users WHERE password = ?', (wallet, senha))
+        cur.execute('SELECT ? FROM users WHERE wallet = ?;', (wallet, wallet))
         row = dict(cur.fetchone())
     except TypeError:
         return {"status": "user not found or wrong password"}
+    '''
 
     row = cur.execute('SELECT currency FROM users WHERE wallet = ?;', (wallet,)).fetchone()
     currency = dict(row)['currency']

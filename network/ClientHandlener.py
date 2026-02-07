@@ -115,5 +115,10 @@ class ClientHandlener:
     def get_wallet(self, wallet, password):
         return self.db.seeinfo(wallet, password)
 
+    def transfer(self, origin_wallet, destiny_wallet, value):
+        self.db.transaction('sub', origin_wallet, value)
+        self.db.transaction('add', destiny_wallet, value)
+
+
     def close(self):
         self.s.close()
