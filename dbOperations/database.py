@@ -24,7 +24,7 @@ class Database:
             'email': email,
             'pass': Utils.gethash(password),
             'wallet': Utils.new_uuid(),
-            'data': Utils.get_local_date(),
+            'date': Utils.get_local_date(),
             'currency': 0,
             'tfa': 0
         }
@@ -92,9 +92,19 @@ class Database:
     def add_histoy(self, swallet, dwallet, value):
         history_url = self.db_url + 'add-history'
 
-        data = {'swallet': swallet, 'dwallet': dwallet, 'date': Utils.getdatenow(True), 'value': value}
+        real_value = int(value) / 100000000
+        edited_value = f"{real_value:.10f}".rstrip('0').rstrip('.')
+
+        data = {'swallet': swallet, 'dwallet': dwallet, 'date': Utils.getdatenow(True), 'value': edited_value}
 
         return self.db_post_access(history_url, data)
+
+    def client_history(self, swallet):
+        chist = self.db_url + 'myhistory'
+
+        data = {'swallet': swallet}
+
+        return self.db_post_access(chist, data)
 
 
 if __name__ == '__main__':

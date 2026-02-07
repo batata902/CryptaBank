@@ -123,5 +123,8 @@ class ClientHandlener:
 
         send_email(self.email, edited_value, origin_wallet, destiny_wallet, Utils.new_uuid(0), 'transaction')
 
+    def myhistory(self, swallet):
+        return self.db.client_history(swallet)
+
     def close(self):
         self.s.close()

@@ -1,5 +1,7 @@
 import socket
 import threading
+from datetime import datetime
+
 import cryptography.fernet
 from network.ClientHandlener import ClientHandlener
 from utils.utils import Utils
@@ -47,10 +49,11 @@ def handleclient(client):
                 auth = client.get_wallet(wallet, password)
                 real_value = int(auth["currency"]) / 100000000
                 edited_value = f"{real_value:.10f}".rstrip('0').rstrip('.')
+
                 carteira = (f'{Utils.linha()}\n'
                             f'{G}wallet{E}: {auth["wallet"]}\n'
                             f'{G}email{E}: {auth["email"]}\n'
-                            f'{G}creation-date{E}: {auth["data"]}\n'
+                            f'{G}creation-date{E}: {auth["created_at"]}\n'
                             f'{G}currency{E}: ₿ {edited_value} -> R$ {(real_value * 366887.57):.2f}\n'
                             f'{G}2FA{E}: {auth["tfa"]}\n{Utils.linha()}')
                 client.senddata(carteira)
@@ -67,7 +70,18 @@ def handleclient(client):
                 client.senddata(f'{G}Transferencia realizada com sucesso!{E}')
                 continue
 
+            elif cmd in ['history', 'historico', 'transacoes']:
+                historico = client.myhistory(auth['wallet'])
+                itens = ''
+                for h in historico:
+                    parts = [f"{k}: {v}" for k, v in h.items()]
+                    linha = ",".join(parts)
+                    linha += '\n'
+                    itens += linha
+                client.senddata(itens)
+
             client.senddata(f'[{R}ERRO{E}] Comando não encontrado.')
+
 
     except cryptography.fernet.InvalidToken:
         client.close()

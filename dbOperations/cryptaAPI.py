@@ -11,31 +11,14 @@ from utils.utils import Utils
 app = Flask(__name__)
 lock = threading.Lock()
 conn = sqlite3.connect('cryptabank.sql', check_same_thread=False)
-
 conn.row_factory = sqlite3.Row
 cur = conn.cursor()
 
-def create_tables():
-    conn.execute('''CREATE TABLE IF NOT EXISTS users(
-        email TEXT PRIMARY KEY,
-        password TEXT,
-        wallet TEXT,
-        data TEXT,
-        currency INTEGER,
-        tfa INTEGER
-    );''')
-    conn.commit()
+sql = open('init.sql', 'r').read()
+cur.executescript(sql)
 
-    conn.execute('''CREATE TABLE IF NOT EXISTS transfer_history(
-        source_wallet TEXT,
-        destiny_wallet TEXT,
-        value TEXT,
-        date TEXT
-    );''')
-    conn.commit()
-
-    # IMPLEMENTAR
-    ''' 
+ # IMPLEMENTAR
+''' 
     CREATE TABLE command_history (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
@@ -45,8 +28,8 @@ def create_tables():
     status ENUM('SUCCESS', 'ERROR') NOT NULL,
     error_message TEXT,
     ip_address VARCHAR(45)
-);
-    '''
+    );
+'''
 
 
 @app.route('/add-history', methods=['POST'])
@@ -61,6 +44,22 @@ def add_history():
                 (source_wallet, destiny_wallet, value, date))
     conn.commit()
     return {'status': 'ok'}
+
+@app.route('/myhistory', methods=['POST'])
+def myhistory():
+    req = request.get_json()
+    swallet = req['swallet']
+
+    historico = []
+
+    consulta = cur.execute('SELECT * FROM transfer_history WHERE source_wallet = ?;', (swallet,))
+    while True:
+        itens = consulta.fetchmany(10)
+        if not itens:
+            break
+        for item in itens:
+            historico.append(dict(item))
+    return historico
 
 @app.route('/consult-history', methods=['GET'])
 def consult_history():
@@ -79,13 +78,13 @@ def cadas():
     cadastro = request.get_json()
     with lock:
         try:
-            conn.execute('INSERT INTO users(email, password, wallet, data, currency, tfa) VALUES ('
+            conn.execute('INSERT INTO users(email, password, wallet, currency, tfa, created_at) VALUES ('
                          '?,'
                          '?,'
                          '?,'
                          '?,'
                          '?,'
-                         '?);', (cadastro["email"], cadastro["pass"], cadastro["wallet"], cadastro["data"], cadastro["currency"], cadastro["tfa"]))
+                         '?);', (cadastro["email"], cadastro["pass"], cadastro["wallet"], cadastro["currency"], cadastro["tfa"], cadastro['date']))
             conn.commit()
         except sqlite3.IntegrityError:
             return {"status": "Email already registered"}
@@ -246,5 +245,4 @@ def depositar():
     return {'status': 'ok'}
 
 
-create_tables()
 app.run()
