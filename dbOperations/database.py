@@ -34,12 +34,15 @@ class Database:
         success = self.db_post_access(cad_url, data)
         return success
 
-    def transaction(self, operation, wallet, value):
+    def transaction(self, swallet, dwallet, value):
         trans_url = self.db_url + 'updatecurrency'
-        data = {'operation': operation, 'wallet': wallet, 'nvalue': value}
+        data = {'operation': 'sub', 'wallet': swallet, 'nvalue': value}
+        data2 = {'operation': 'add', 'wallet': dwallet, 'nvalue': value}
 
         success = self.db_post_access(trans_url, data)
-        return success
+        success2 = self.db_post_access(trans_url, data2)
+        self.add_histoy(swallet, dwallet, value)
+        return [success, success2]
 
     def seeinfo(self, wallet, password):
         info_url = self.db_url + 'seeinfos'
@@ -85,6 +88,13 @@ class Database:
         data = {'email': email, 'pass': Utils.gethash(password)}
 
         return self.db_post_access(login_url, data)
+
+    def add_histoy(self, swallet, dwallet, value):
+        history_url = self.db_url + 'add-history'
+
+        data = {'swallet': swallet, 'dwallet': dwallet, 'date': Utils.getdatenow(True), 'value': value}
+
+        return self.db_post_access(history_url, data)
 
 
 if __name__ == '__main__':

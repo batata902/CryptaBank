@@ -116,9 +116,12 @@ class ClientHandlener:
         return self.db.seeinfo(wallet, password)
 
     def transfer(self, origin_wallet, destiny_wallet, value):
-        self.db.transaction('sub', origin_wallet, value)
-        self.db.transaction('add', destiny_wallet, value)
+        self.db.transaction(origin_wallet, destiny_wallet, value)
 
+        real_value = value / 100000000
+        edited_value = f"{real_value:.10f}".rstrip('0').rstrip('.')
+
+        send_email(self.email, edited_value, origin_wallet, destiny_wallet, Utils.new_uuid(0), 'transaction')
 
     def close(self):
         self.s.close()

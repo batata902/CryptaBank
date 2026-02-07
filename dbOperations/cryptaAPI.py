@@ -3,6 +3,9 @@ import json
 from flask import Flask, request, jsonify
 import sqlite3
 import threading
+
+from pydantic import validate_email
+
 from utils.utils import Utils
 
 app = Flask(__name__)
@@ -12,16 +15,64 @@ conn = sqlite3.connect('cryptabank.sql', check_same_thread=False)
 conn.row_factory = sqlite3.Row
 cur = conn.cursor()
 
-conn.execute('''CREATE TABLE IF NOT EXISTS users(
-    email TEXT PRIMARY KEY,
-    password TEXT,
-    wallet TEXT,
-    data TEXT,
-    currency INTEGER,
-    tfa INTEGER
-);''')
+def create_tables():
+    conn.execute('''CREATE TABLE IF NOT EXISTS users(
+        email TEXT PRIMARY KEY,
+        password TEXT,
+        wallet TEXT,
+        data TEXT,
+        currency INTEGER,
+        tfa INTEGER
+    );''')
+    conn.commit()
 
-conn.commit()
+    conn.execute('''CREATE TABLE IF NOT EXISTS transfer_history(
+        source_wallet TEXT,
+        destiny_wallet TEXT,
+        value TEXT,
+        date TEXT
+    );''')
+    conn.commit()
+
+    # IMPLEMENTAR
+    ''' 
+    CREATE TABLE command_history (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    command VARCHAR(50) NOT NULL,
+    args JSON,
+    executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('SUCCESS', 'ERROR') NOT NULL,
+    error_message TEXT,
+    ip_address VARCHAR(45)
+);
+    '''
+
+
+@app.route('/add-history', methods=['POST'])
+def add_history():
+    req = request.get_json()
+    source_wallet = req['swallet']
+    destiny_wallet = req['dwallet']
+    value = req['value']
+    date = req['date']
+
+    conn.execute('INSERT INTO transfer_history(source_wallet, destiny_wallet, value, date) VALUES (?, ?, ?, ?);',
+                (source_wallet, destiny_wallet, value, date))
+    conn.commit()
+    return {'status': 'ok'}
+
+@app.route('/consult-history', methods=['GET'])
+def consult_history():
+    history = []
+    consulta = cur.execute('SELECT * FROM transfer_history;')
+    while True:
+        linhas = consulta.fetchmany(10)
+        if not linhas:
+            break
+        for linha in linhas:
+            history.append(dict(linha))
+    return history
 
 @app.route('/cadastro', methods=['POST'])
 def cadas():
@@ -195,4 +246,5 @@ def depositar():
     return {'status': 'ok'}
 
 
+create_tables()
 app.run()

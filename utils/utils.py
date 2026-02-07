@@ -5,9 +5,10 @@ import random
 
 class Utils:
     @classmethod
-    def new_uuid(cls):
-        new_id = uuid.uuid4().hex
-        return new_id
+    def new_uuid(cls, hexornot=1):
+        if hexornot == 1:
+            return uuid.uuid4().hex
+        return str(uuid.uuid4())
 
     @classmethod
     def get_local_date(cls):
@@ -25,3 +26,12 @@ class Utils:
     @classmethod
     def linha(cls):
         return '[+]' + ('=' * 30) + '[+]'
+
+    @classmethod
+    def getdatenow(cls, hora=False):
+        atual = datetime.datetime.now()
+        dia = atual.strftime('%d/%m/%Y')
+        hora = atual.strftime('%H:%M:%S')
+        if hora:
+            return f'{dia} - {hora}'
+        return dia

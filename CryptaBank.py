@@ -63,7 +63,7 @@ def handleclient(client):
                 except IndexError:
                     client.senddata(f'{R}Comando incompleto{E}')
                     continue
-                client.transfer(auth['wallet'], destiny, float(quantity) * 100000000)
+                client.transfer(auth['wallet'], destiny, int(float(quantity) * 100000000))
                 client.senddata(f'{G}Transferencia realizada com sucesso!{E}')
                 continue
 
