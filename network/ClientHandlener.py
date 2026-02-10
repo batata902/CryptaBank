@@ -107,10 +107,10 @@ class ClientHandlener:
         self.senddata('[+] \033[32mDigite a sua senha para confirmar a ação\033[m')
         senha = self.recvdata()['msg']
         if self.db.login(self.email, senha)['login'] != "no":
-            self.senddata('[+] Senha correta! Alterações feitas.')
-            return True
-        self.senddata('[-] Senha incorreta inserida. Tente novamente mais tarde.')
-        return False
+            self.senddata(f'[+] {G}Senha correta! Alterações feitas.{E}')
+            return True, senha
+        self.senddata(f'[-] {R}Senha incorreta inserida. Tente novamente mais tarde.{E}')
+        return False, None
 
     def get_wallet(self, wallet, password):
         return self.db.seeinfo(wallet, password)
@@ -125,6 +125,10 @@ class ClientHandlener:
 
     def myhistory(self, swallet):
         return self.db.client_history(swallet)
+
+    def changetfa(self):
+        password = self.confirm_password()[1]
+        return self.db.atualizar_2fa(self.email, password)
 
     def close(self):
         self.s.close()

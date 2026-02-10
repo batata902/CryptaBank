@@ -79,6 +79,11 @@ def handleclient(client):
                     linha += '\n'
                     itens += linha
                 client.senddata(itens)
+                continue
+
+            elif cmd == '2fa':
+                client.changetfa()
+                continue
 
             client.senddata(f'[{R}ERRO{E}] Comando não encontrado.')
 
