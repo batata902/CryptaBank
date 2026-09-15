@@ -8,6 +8,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from hashlib import sha256
 from datetime import datetime
+import secrets
 
 @contextmanager
 def db():
@@ -26,21 +27,21 @@ class User:
     id: int
     username: str
     password: str
-    _currency: int
+    _balance: int
     key: str
 
     @property
-    def currency(self) -> int:
+    def balance(self) -> int:
         with db() as (_, cur):
-            self._currency = cur.execute('SELECT currency FROM users WHERE id = ?', (self.id,)).fetchone()['currency']
-        return self._currency
+            self._balance = cur.execute('SELECT balance FROM users WHERE id = ?', (self.id,)).fetchone()['balance']
+        return self._balance
 
-    @currency.setter
-    def currency(self, value: int):
+    @balance.setter
+    def balance(self, value: int):
         if not value:
-            raise ValueError('Currency não pode ser vazia')
+            raise ValueError('balance não pode ser vazia')
 
-        self._currency = value
+        self._balance = value
 
         
     @classmethod
@@ -54,7 +55,7 @@ class User:
             id = user['id'],
             username = user['username'],
             password = user['password'],
-            _currency = user['currency'],
+            _balance = user['balance'],
             key = user['key']
             )   
 
@@ -68,6 +69,28 @@ class User:
         
         if user['password'] == sha256(password.encode('utf-8')).hexdigest():
             return cls.load_user(user['id'])
+
+    @staticmethod
+    def create_user(username: str, password: str) -> bool:
+        password: str = sha256(password).hexdigest()
+
+        key = secrets.token_urlsafe(6)
+        with db() as (conn, cur):
+            while True:
+                k = cur.execute('SELECT id FROM users WHERE key=?;', (key,)).fetchone()
+                if k:
+                    key = secrets.token_urlsafe(6)
+                    continue
+                break
+
+            try:
+                cur.execute('INSERT INTO users(username, password, balance, key) VALUES(?, ?, ?, ?);', (username, password, 0, key))
+            except sqlite3.IntegrityError:
+                return False
+
+            conn.commit()
+
+        return True
 
     def update_key(self, key) -> bool:
         with db() as (conn, cur):
@@ -84,7 +107,7 @@ class User:
     def transfer(self, destiny, value) -> bool:
         value = int(value)
 
-        if value > self.currency:
+        if value > self.balance:
             return False
 
         current_date: str = datetime.now().strftime("%d/%m/&Y:%H-%M")
@@ -96,17 +119,17 @@ class User:
                 dest = cur.execute('SELECT * FROM users WHERE key=?;', (destiny,)).fetchone()
 
                 if dest:
-                    cur.execute('UPDATE users SET currency=currency - ? WHERE id=?', (value, self.id))
+                    cur.execute('UPDATE users SET balance=balance - ? WHERE id=?', (value, self.id))
                     if cur.rowcount == 0:
                         conn.rollback()
                         return False
 
-                    cur.execute('UPDATE users SET currency=currency + ? WHERE id=?', (value, dest['id']))
+                    cur.execute('UPDATE users SET balance=balance + ? WHERE id=?', (value, dest['id']))
 
                     cur.execute('INSERT INTO transfers(source, destiny, value, date) VALUES(?, ?, ?, ?)', (self.id, dest['id'], value, current_date))
 
                     conn.commit()
-                    self._currency -= int(value)
+                    self._balance -= int(value)
 
                     return True
                 
@@ -154,7 +177,6 @@ class Cards:
     brand: str
     exp: str
     blocked: bool
-    balance: int
     owner_id: int
 
     @classmethod
@@ -172,7 +194,6 @@ class Cards:
             brand=card['brand'],
             exp=card['exp'],
             blocked=card['blocked'],
-            balance=card['balance'],
             owner_id=card['owner']
         )
 
@@ -191,7 +212,7 @@ class Cards:
         card_num: str = gerar_cartao("5", 16)
         with db() as (conn, cur):
             cur.execute(
-                'INSERT OR IGNORE INTO cards(holder, number, cvv, brand, exp, blocked, balance, owner) VALUES(?, ?, ?, ?, ?, ?, ?, ?)', 
+                'INSERT OR IGNORE INTO cards(holder, number, cvv, brand, exp, blocked, owner) VALUES(?, ?, ?, ?, ?, ?, ?)', 
                 (name, card_num, "".join([str(random.randint(0, 9)) for _ in range(3)]), 'CryptaB', '04/30', 0, 0, user.id)
             )
 

@@ -39,7 +39,25 @@ def login():
         return response
 
     return render_template('login.html', error='Username ou senha inválidos!')
-    
+
+
+@app.route('/register', methods=['POST'])
+def register():
+    username: str = request.form.get('username')
+    password: str = request.form.get('password')
+
+    if not username or not password:
+        return render_template('login.html', error='Digite o username e a senha!')
+
+    log = access().register(username, password)
+
+    if log[0]:
+        response = make_response(redirect(url_for('dashboard')))
+        response.set_cookie('token', log[1])
+        return response
+
+    return render_template('login.html', error='Username ou senha inválidos!')
+
 
 @app.route('/dashboard')
 @login_required

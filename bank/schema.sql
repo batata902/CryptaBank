@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS users(
     id INTEGER PRIMARY KEY,
     username TEXT NOT NULL UNIQUE,
     password TEXT NOT NULL,
-    currency INTEGER NOT NULL,
+    balance INTEGER NOT NULL,
     key TEXT UNIQUE NOT NULL
 );
 
@@ -22,7 +22,6 @@ CREATE TABLE IF NOT EXISTS cards (
     brand TEXT NOT NULL,
     exp TEXT NOT NULL,
     blocked INTEGER NOT NULL,
-    balance INTEGER NOT NULL ,
     owner INTEGER NOT NULL REFERENCES users(id)
 );
 

@@ -6,6 +6,137 @@
 <title>CryptaBank — Controle total da sua vida financeira</title>
 <meta name="description" content="Peça seu Cartão de Crédito e sua Conta do CryptaBank. Transparente, seguro e 100% digital.">
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<style>
+  /* ========================================================
+     ANIMAÇÕES E ESTILIZAÇÃO DOS CARDS
+     ======================================================== */
+  
+  @keyframes cardEntrance {
+    0% {
+      opacity: 0;
+      transform: translateY(40px) scale(0.96);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  /* Estado base para animação via JavaScript (IntersectionObserver) */
+  .product-card, .feature-card, .blog-card, .security-btn {
+    opacity: 0;
+    transform: translateY(40px) scale(0.96);
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                border-color 0.4s ease,
+                background-color 0.4s ease;
+    will-change: transform, box-shadow;
+  }
+
+  /* Classe ativada pelo JS quando o elemento entra na tela */
+  .product-card.reveal, .feature-card.reveal, .blog-card.reveal, .security-btn.reveal {
+    animation: cardEntrance 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Delays em cascata para os grupos */
+  .products-grid .product-card:nth-child(1) { animation-delay: 0.1s; }
+  .products-grid .product-card:nth-child(2) { animation-delay: 0.2s; }
+  .products-grid .product-card:nth-child(3) { animation-delay: 0.3s; }
+  .products-grid .product-card:nth-child(4) { animation-delay: 0.4s; }
+
+  .features-grid .feature-card:nth-child(1) { animation-delay: 0.15s; }
+  .features-grid .feature-card:nth-child(2) { animation-delay: 0.25s; }
+  .features-grid .feature-card:nth-child(3) { animation-delay: 0.35s; }
+  .features-grid .feature-card:nth-child(4) { animation-delay: 0.45s; }
+
+  .blog-grid .blog-card:nth-child(1) { animation-delay: 0.2s; }
+  .blog-grid .blog-card:nth-child(2) { animation-delay: 0.32s; }
+  .blog-grid .blog-card:nth-child(3) { animation-delay: 0.44s; }
+
+  .security-actions .security-btn:nth-child(1) { animation-delay: 0.1s; }
+  .security-actions .security-btn:nth-child(2) { animation-delay: 0.2s; }
+  .security-actions .security-btn:nth-child(3) { animation-delay: 0.3s; }
+  .security-actions .security-btn:nth-child(4) { animation-delay: 0.4s; }
+
+
+  /* --- HOVER APRIMORADO (Apenas ao passar o mouse) --- */
+
+  .product-card:hover {
+    transform: translateY(-10px) scale(1.01);
+    border-color: rgba(250, 194, 3, 0.7);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.75), 0 0 20px rgba(250, 194, 3, 0.15);
+  }
+
+  .feature-card:hover {
+    transform: translateY(-10px) scale(1.01);
+    border-color: rgba(250, 194, 3, 0.5);
+    box-shadow: 0 20px 40px rgba(250, 194, 3, 0.2);
+  }
+
+  .blog-card:hover {
+    transform: translateY(-10px) scale(1.01);
+    border-color: rgba(250, 194, 3, 0.7);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.75);
+  }
+
+  /* Efeito na imagem do blog */
+  .blog-card img {
+    transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s ease;
+    filter: brightness(0.95);
+  }
+
+  .blog-card:hover img {
+    transform: scale(1.08);
+    filter: brightness(1.05);
+  }
+
+  .security-btn:hover {
+    transform: translateY(-6px) scale(1.02);
+    border-color: var(--solar-gold, #fac203);
+    box-shadow: 0 12px 25px rgba(0, 0, 0, 0.5), 0 0 15px rgba(250, 194, 3, 0.2);
+  }
+
+  /* --- Estilo dinâmico para substituir imagens que não carregarem --- */
+  .image-fallback-container {
+    width: 100%;
+    height: 140px;
+    background: rgba(0, 0, 0, 0.4);
+    display: none; /* Só aparece se a imagem falhar */
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid rgba(250, 194, 3, 0.15);
+    border-radius: 8px 8px 0 0;
+    margin-bottom: 1rem;
+  }
+
+  .image-fallback-container span {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #fac203; /* Amarelo solicitado */
+    letter-spacing: 1px;
+    text-shadow: 0 2px 10px rgba(250, 194, 3, 0.3);
+  }
+
+
+  /* --- Efeito 3D para o Cartão do Topo --- */
+  .hero-visual {
+    perspective: 1200px;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .card-mock {
+    transition: transform 0.1s ease-out;
+    transform-style: preserve-3d;
+    will-change: transform;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.7), 0 0 25px rgba(250, 194, 3, 0.3);
+    cursor: pointer;
+  }
+</style>
 </head>
 <body>
 <a class="skip-link" href="#main-content">Pular para o conteúdo principal</a>
@@ -44,8 +175,9 @@
           <button type="submit" class="btn btn-primary">Continuar</button>
         </form>
       </div>
-      <div class="hero-visual" role="img" aria-label="Ilustração de um cartão de crédito dourado do CryptaBank flutuando sobre um fundo preto">
-        <div class="card-mock">
+      <!-- Cartão 3D isolado sem caixa preta -->
+      <div class="hero-visual" id="hero-visual" role="img" aria-label="Ilustração de um cartão de crédito dourado do CryptaBank em 3D">
+        <div class="card-mock" id="card-mock">
           <div class="chip" aria-hidden="true"></div>
           <div class="number" aria-hidden="true">•••• •••• •••• 0000</div>
           <div class="brand">CryptaBank</div>
@@ -54,7 +186,7 @@
     </div>
   </section>
 
-  <!-- Seção 2: Segmentação de Produtos -->
+  <!-- Seção 2: Segmentação de Produtos (Sem imagens originais) -->
   <section id="produtos" aria-labelledby="produtos-title">
     <div class="container">
       <div class="section-heading">
@@ -85,7 +217,7 @@
     </div>
   </section>
 
-  <!-- Seção 3: Principais Soluções e Features -->
+  <!-- Seção 3: Principais Soluções e Features (Sem imagens originais) -->
   <section id="solucoes" aria-labelledby="solucoes-title">
     <div class="container">
       <div class="section-heading center">
@@ -116,7 +248,7 @@
     </div>
   </section>
 
-  <!-- Seção 4: Blog / Novidades -->
+  <!-- Seção 4: Blog / Novidades (Com imagens reais que ativam fallback se falharem) -->
   <section id="novidades" aria-labelledby="novidades-title">
     <div class="container">
       <div class="blog-header">
@@ -125,21 +257,30 @@
       </div>
       <div class="blog-grid">
         <article class="blog-card">
-          <img src="https://images.unsplash.com/photo-1614064548237-096d64ec86d5?w=600&h=340&fit=crop" alt="Cadeado digital simbolizando a proteção de dados e do dinheiro dos clientes" loading="lazy" width="600" height="340">
+          <div style="overflow: hidden;">
+            <div class="image-fallback-container"><span>CryptaBank</span></div>
+            <img src="https://images.unsplash.com/photo-1614064548237-096d64ec86d5?w=600&h=340&fit=crop" alt="Cadeado digital simbolizando a proteção de dados" loading="lazy" width="600" height="340">
+          </div>
           <div class="blog-card-body">
             <h3>Proteção em várias camadas: como o CryptaBank cuida do seu dinheiro e dos seus dados.</h3>
             <a class="card-link" href="#novidades">Leia aqui</a>
           </div>
         </article>
         <article class="blog-card">
-          <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=600&h=340&fit=crop" alt="Pessoa organizando finanças pessoais em um aplicativo no celular" loading="lazy" width="600" height="340">
+          <div style="overflow: hidden;">
+            <div class="image-fallback-container"><span>CryptaBank</span></div>
+            <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=600&h=340&fit=crop" alt="Pessoa organizando finanças pessoais" loading="lazy" width="600" height="340">
+          </div>
           <div class="blog-card-body">
             <h3>5 soluções do CryptaBank para dar um empurrãozinho na organização da sua vida financeira.</h3>
             <a class="card-link" href="#novidades">Leia aqui</a>
           </div>
         </article>
         <article class="blog-card">
-          <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=340&fit=crop" alt="Cartão de crédito virtual exibido na tela de um smartphone" loading="lazy" width="600" height="340">
+          <div style="overflow: hidden;">
+            <div class="image-fallback-container"><span>CryptaBank</span></div>
+            <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600&h=340&fit=crop" alt="Cartão de crédito virtual exibido no celular" loading="lazy" width="600" height="340">
+          </div>
           <div class="blog-card-body">
             <h3>A revolução do crédito: conheça as novas vantagens do seu cartão virtual.</h3>
             <a class="card-link" href="#novidades">Leia aqui</a>
@@ -173,9 +314,12 @@
         <p style="margin-top: var(--space-2); color: var(--ivory-sand);">Uma revolução financeira projetada para facilitar a sua vida. Venha fazer parte.</p>
       </div>
       <div class="social-proof-visual">
-        <img src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=400&h=400&fit=crop" alt="Cliente sorrindo enquanto usa o cartão CryptaBank em uma compra" loading="lazy" width="400" height="400">
-        <img src="https://images.unsplash.com/photo-1556742044-3c52d6e88c62?w=400&h=400&fit=crop" alt="Cliente conferindo o saldo da conta pelo aplicativo do CryptaBank" loading="lazy" width="400" height="400">
-        <img src="https://images.unsplash.com/photo-1556740758-90de374c12ad?w=400&h=400&fit=crop" alt="Grupo de clientes satisfeitos usando o CryptaBank no dia a dia" loading="lazy" width="400" height="400">
+        <div class="image-fallback-container" style="height: 200px;"><span>CryptaBank</span></div>
+        <img src="https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=400&h=400&fit=crop" alt="Cliente sorrindo" loading="lazy" width="400" height="400" onerror="this.style.display='none'; this.previousElementSibling.style.display='flex';">
+        <div class="image-fallback-container" style="height: 200px;"><span>CryptaBank</span></div>
+        <img src="https://images.unsplash.com/photo-1556742044-3c52d6e88c62?w=400&h=400&fit=crop" alt="Cliente conferindo saldo" loading="lazy" width="400" height="400" onerror="this.style.display='none'; this.previousElementSibling.style.display='flex';">
+        <div class="image-fallback-container" style="height: 200px;"><span>CryptaBank</span></div>
+        <img src="https://images.unsplash.com/photo-1556740758-90de374c12ad?w=400&h=400&fit=crop" alt="Grupo de clientes" loading="lazy" width="400" height="400" onerror="this.style.display='none'; this.previousElementSibling.style.display='flex';">
       </div>
     </div>
   </section>
@@ -279,8 +423,7 @@
 
 <script>
   (function(){
-    // Basic client-side handling for the two lead forms: prevent navigation,
-    // show inline confirmation without any external dependency.
+    // Formulários de Leads
     var forms = document.querySelectorAll('.cpf-form');
     forms.forEach(function(form){
       form.addEventListener('submit', function(e){
@@ -299,6 +442,64 @@
         }, 2500);
       });
     });
+
+    // Tratamento automático para imagens que falharem ao carregar (Fallback)
+    document.querySelectorAll('.blog-card img, .social-proof-visual img').forEach(img => {
+      img.addEventListener('error', function() {
+        this.style.display = 'none';
+        if (this.previousElementSibling && this.previousElementSibling.classList.contains('image-fallback-container')) {
+          this.previousElementSibling.style.display = 'flex';
+        }
+      });
+    });
+
+    // Animação por rolagem (Scroll Reveal) usando IntersectionObserver
+    const observerOptions = {
+      root: null,
+      rootMargin: '0px 0px -50px 0px',
+      threshold: 0.15
+    };
+
+    const observer = new IntersectionObserver((entries, observerInstance) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('reveal');
+          observerInstance.unobserve(entry.target);
+        }
+      });
+    }, observerOptions);
+
+    const animatedElements = document.querySelectorAll('.product-card, .feature-card, .blog-card, .security-btn');
+    animatedElements.forEach(el => observer.observe(el));
+
+    // Efeito 3D (Tilt) no Cartão do Hero
+    const heroVisual = document.getElementById('hero-visual');
+    const cardMock = document.getElementById('card-mock');
+
+    if (heroVisual && cardMock) {
+      heroVisual.addEventListener('mousemove', function(e) {
+        const rect = heroVisual.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+        
+        const rotateX = -((y - centerY) / centerY) * 18;
+        const rotateY = ((x - centerX) / centerX) * 18;
+        
+        cardMock.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.06, 1.06, 1.06)`;
+      });
+
+      heroVisual.addEventListener('mouseleave', function() {
+        cardMock.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+        cardMock.style.transition = 'transform 0.5s ease-in-out';
+      });
+
+      heroVisual.addEventListener('mouseenter', function() {
+        cardMock.style.transition = 'none';
+      });
+    }
   })();
 </script>
 

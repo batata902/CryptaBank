@@ -249,7 +249,7 @@ input:focus-visible {
   </form>
 
   <!-- Formulário de Cadastro -->
-  <form class="auth-form form-section" id="register-form" aria-label="Formulário de Cadastro">
+  <form class="auth-form form-section" id="register-form" aria-label="Formulário de Cadastro" action="{{ url_for('register') }}" method="post">
     <div class="field-group">
       <label for="register-user">Username</label>
       <input type="text" id="register-user" name="username" class="auth-input" placeholder="Escolha um usuário" autocomplete="username" required>

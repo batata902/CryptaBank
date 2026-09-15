@@ -21,12 +21,12 @@ def help(*_) -> bytes:
 @bank.command('BALANCE', help='Exibe o saldo da sua conta')
 @require_auth
 def saldo(session: Session, _) -> bytes:
-    saldo_ = session.user.currency / 100
+    saldo_ = session.user.balance / 100
 
     return  Response.render_response(saldo_, 'S')
 
 
-@bank.command('CREATE', help='Cria algo, opções: card "holder"')
+@bank.command('CREATE', help='Cria algo, opções: card "holder", user "username" "password"')
 @require_auth
 def create(session: Session, args) -> bytes:
     if len(args) < 2:
@@ -39,6 +39,15 @@ def create(session: Session, args) -> bytes:
             return Response.render_response('OK', 'S')
 
         return Response.render_response('Cartão já existe', 'E')
+
+    elif args[0].lower() == 'user':
+        if len(args) < 3:
+            return Response.render_response('Você precisa informar o username e a senha', 'E')
+        success: bool = User.create_user(args[1], args[2])
+        if success:
+            return Response.render_response('OK', 'S')
+
+        return Response.render_response('Erro no cadastro', 'E')
 
     return Response.render_response('Erro no Create', 'E')
 
@@ -77,11 +86,11 @@ def transfers(session: Session, _) -> bytes:
 @bank.command('INFO', help='Exibe as informações da sua conta')
 @require_auth
 def info(session: Session, _) -> bytes:
-    saldo = f'{(session.user.currency / 100):.2f}'.replace('.', ',')
+    saldo = f'{(session.user.balance / 100):.2f}'.replace('.', ',')
     infos = {
         'id': session.user.id, 
         'username': session.user.username, 
-        'currency': saldo, 
+        'balance': saldo, 
         'key': session.user.key
         }
 
@@ -129,7 +138,7 @@ def update_key(session: Session, args: list[str]) -> bytes:
     return Response.render_response('UPDATE command takes 2 argumments', 'E')
 
 
-@bank.command('TRANSFER', help='TRANSFER an x value to a y card (Ex: TRANSFER conta_y valor_x)')
+@bank.command('TRANSFER', help='TRANSFER an x value to a y account (Ex: TRANSFER conta_y valor_x)')
 @require_auth
 def transfer(session: Session, args: list) -> bytes:
     if len(args) == 2:
