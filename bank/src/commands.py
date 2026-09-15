@@ -25,6 +25,16 @@ def saldo(session: Session, _) -> bytes:
 
     return  Response.render_response(saldo_, 'S')
 
+@bank.command('REGISTER', help='Registra usuário (ex: REGISTER "username" "password")')
+def register(session, args) -> bytes:
+    if len(args) < 2:
+        return Response.render_response('Você precisa informar o username e a senha', 'E')
+    success: bool = User.create_user(args[0], args[1])
+    if success:
+        return Response.render_response('OK', 'S')
+
+    return Response.render_response('Erro no cadastro', 'E')
+
 
 @bank.command('CREATE', help='Cria algo, opções: card "holder", user "username" "password"')
 @require_auth
@@ -39,15 +49,6 @@ def create(session: Session, args) -> bytes:
             return Response.render_response('OK', 'S')
 
         return Response.render_response('Cartão já existe', 'E')
-
-    elif args[0].lower() == 'user':
-        if len(args) < 3:
-            return Response.render_response('Você precisa informar o username e a senha', 'E')
-        success: bool = User.create_user(args[1], args[2])
-        if success:
-            return Response.render_response('OK', 'S')
-
-        return Response.render_response('Erro no cadastro', 'E')
 
     return Response.render_response('Erro no Create', 'E')
 

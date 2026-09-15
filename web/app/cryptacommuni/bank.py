@@ -38,9 +38,10 @@ class BankAccess:
         return (False, None)
 
     def register(self, username, password) -> tuple[bool, str | None]:
-        self.sock.send(f'CREATE user {username} {password}'.encode('utf-8'))
+        self.sock.send(f'REGISTER {username} {password}'.encode('utf-8'))
         
         response: dict = json.loads(self.sock.recv(1024).decode('utf-8'))
+        print(response)
         if response['status'] == 200:
             return self.login(username, password)
 

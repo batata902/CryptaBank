@@ -63,7 +63,7 @@ class Bank:
                 break
 
             if not data:
-                print(f'[ - ] Cliente desconectado -> {client[0]}')
+                print(f'[-] Cliente desconectado -> {client[0]}')
                 con.close()
                 return
 
@@ -78,6 +78,7 @@ class Bank:
                 return
 
             func = self.commands.get(cmd)
+            print(self.commands)
 
             if not func:
                 response = Response.render_response('Invalid command', 'E')

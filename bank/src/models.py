@@ -72,7 +72,7 @@ class User:
 
     @staticmethod
     def create_user(username: str, password: str) -> bool:
-        password: str = sha256(password).hexdigest()
+        password: str = sha256(password.encode('utf-8')).hexdigest()
 
         key = secrets.token_urlsafe(6)
         with db() as (conn, cur):

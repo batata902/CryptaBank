@@ -25,9 +25,8 @@ CREATE TABLE IF NOT EXISTS cards (
     owner INTEGER NOT NULL REFERENCES users(id)
 );
 
-INSERT OR IGNORE INTO users(username, password, currency, key) 
+INSERT OR IGNORE INTO users(username, password, balance, key) 
 VALUES
-('guest', 'bfbdb10e7244d30e9225a2bc22658556a50ffc79f032704bcbb96d89469a14b8', 1000, 'guest'), 
-('guest2', 'bfbdb10e7244d30e9225a2bc22658556a50ffc79f032704bcbb96d89469a14b8', 10000, 'jeje');
+('guest', 'bfbdb10e7244d30e9225a2bc22658556a50ffc79f032704bcbb96d89469a14b8', 100000, 'guest');
 
 -- guest:senhadaora
