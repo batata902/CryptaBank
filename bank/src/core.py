@@ -78,7 +78,6 @@ class Bank:
                 return
 
             func = self.commands.get(cmd)
-            print(self.commands)
 
             if not func:
                 response = Response.render_response('Invalid command', 'E')

@@ -2,7 +2,7 @@ from app.api import api
 from app.cryptacommuni import access
 from app.views import login_required
 
-from flask import jsonify, request
+from flask import jsonify, request, make_response
 
 @api.route('/cards', methods=['GET', 'POST'])
 @login_required
@@ -60,12 +60,31 @@ def transactions(a):
 def transfer(a):
     destiny: str = request.json.get('destination')
     value: str = request.json.get('value')
+    card_number: str = request.json.get('cardNumber')
+    cvv: str = request.json.get('cvv')
 
     value: float = float(value)
-    response = a.send_recv(f'TRANSFER {destiny} {value}')
+    response = a.send_recv(f'TRANSFER {destiny} {value} {card_number} {cvv}')
 
     if response['status'] == 100:
         return jsonify(error='Não foi possível fazer a transferencia'), 400
     
     return jsonify(response), 200
 
+@api.route('/transfer-key')
+@login_required
+def key(a):
+    response: dict = a.send_recv(f'INFO')
+
+    if response['status'] == 100:
+        return jsonify(error='Não foi possível obter a chave'), 400
+    return jsonify(response['data']), 200
+
+
+@api.route('/logout', methods=['POST'])
+@login_required
+def logout(_):
+    response = make_response(jsonify(success=True), 200)
+    response.delete_cookie('token')
+
+    return response

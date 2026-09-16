@@ -174,6 +174,18 @@
       color: var(--solar-gold);
     }
 
+    /* Variante Danger para Ações de Exclusão / Logout */
+    .btn-secondary.btn-danger {
+      border-color: #ff4d4d;
+      color: #ff4d4d;
+    }
+
+    .btn-secondary.btn-danger:hover {
+      background-color: rgba(255, 77, 77, 0.1);
+      border-color: #ff4d4d;
+      color: #ff4d4d;
+    }
+
     /* Total Balance Banner */
     .balance-banner {
       background-color: var(--gray-900);
@@ -526,14 +538,18 @@
         </div>
         
         <div class="search-actions">
-          <button class="btn-primary" onclick="openModal('depositModal')">
-            <span>+</span> Depositar
+          <button class="btn-secondary" onclick="openTransferKeyModal()">
+            🔑 Minha Chave
           </button>
           <button class="btn-primary" onclick="openModal('transferModal')">
             <span>+</span> Transferir
           </button>
           <button class="btn-primary" onclick="openModal('addModal')">
             <span>+</span> Cadastrar Cartão
+          </button>
+          <!-- NOVO BOTÃO: LOGOUT / SAIR -->
+          <button class="btn-secondary btn-danger" onclick="handleLogout()">
+            Sair
           </button>
         </div>
       </header>
@@ -584,7 +600,7 @@
           </div>
 
           <div class="manage-actions-row">
-            <button class="btn-secondary" style="flex: 1; border-color: #ff4d4d; color: #ff4d4d;" onclick="deleteSelectedCard()">Excluir Cartão</button>
+            <button class="btn-secondary btn-danger" style="flex: 1;" onclick="deleteSelectedCard()">Excluir Cartão</button>
           </div>
         </div>
 
@@ -609,34 +625,31 @@
         MODAIS 
        ========================================================================== -->
 
-  <!-- MODAL DEPÓSITO -->
-  <div class="modal-overlay" id="depositModal">
+  <!-- MODAL: EXIBIÇÃO DA CHAVE DE TRANSFERÊNCIA -->
+  <div class="modal-overlay" id="transferKeyModal">
     <div class="modal">
       <div class="modal-header">
-        <h3>Depositar Dinheiro</h3>
-        <button class="close-btn" onclick="closeModal('depositModal')">&times;</button>
+        <h3>Chave de Transferência</h3>
+        <button class="close-btn" onclick="closeModal('transferKeyModal')">&times;</button>
       </div>
-      <form id="depositForm" onsubmit="handleDeposit(event)">
-        <div class="form-group" style="margin-bottom: 12px;">
-          <label>Selecione o Cartão Destino</label>
-          <select id="depositCardId" class="form-input" required>
-            <!-- Preenchido dinamicamente via JS -->
-          </select>
+      <div class="card-data-box">
+        <div class="data-row" style="margin-top: 8px;">
+          <span class="data-label">Sua Chave:</span>
+          <span class="data-value" id="keyValue" style="color: var(--solar-gold); font-size: 15px;">Carregando...</span>
         </div>
-        <div class="form-group" style="margin-bottom: 12px;">
-          <label>Valor do Depósito (R$)</label>
-          <input type="number" step="0.01" id="depositValue" class="form-input" required placeholder="0.00">
-        </div>
-        <div class="form-group" style="margin-bottom: 20px;">
-          <label>Senha de Confirmação (6 dígitos)</label>
-          <input type="password" id="depositPassword" class="form-input" required placeholder="Insira sua senha">
-        </div>
-        <button type="submit" class="btn-primary" style="width: 100%; justify-content: center;">Efetuar Depósito</button>
-      </form>
+      </div>
+      <div style="display: flex; gap: var(--space-1); margin-top: 8px;">
+        <button class="btn-secondary" style="flex: 1; justify-content: center;" onclick="copyTransferKey()" id="copyKeyBtn">
+          Copiar Chave
+        </button>
+        <button class="btn-primary" style="flex: 1; justify-content: center;" onclick="fetchTransferKey()">
+          Atualizar
+        </button>
+      </div>
     </div>
   </div>
 
-  <!-- MODAL TRANSFERÊNCIA (Atualizado com dados do cartão) -->
+  <!-- MODAL TRANSFERÊNCIA -->
   <div class="modal-overlay" id="transferModal">
     <div class="modal">
       <div class="modal-header">
@@ -645,7 +658,7 @@
       </div>
       <form id="transferForm" onsubmit="handleTransfer(event)">
         <div class="form-group" style="margin-bottom: 12px;">
-          <label>Chave Pix / Conta de Destino</label>
+          <label>Chave da Conta de Destino</label>
           <input type="text" id="transferDest" class="form-input" required placeholder="CPF, E-mail ou Chave">
         </div>
         <div class="form-group" style="margin-bottom: 12px;">
@@ -656,13 +669,9 @@
           <label>Número do Cartão Utilizado</label>
           <input type="text" id="transferCardNumber" class="form-input" required placeholder="0000 0000 0000 0000">
         </div>
-        <div class="form-group" style="margin-bottom: 12px;">
+        <div class="form-group" style="margin-bottom: 24px;">
           <label>Código CVV</label>
           <input type="password" maxlength="4" id="transferCardCvv" class="form-input" required placeholder="123">
-        </div>
-        <div class="form-group" style="margin-bottom: 20px;">
-          <label>Senha do Cartão</label>
-          <input type="password" id="transferCardPassword" class="form-input" required placeholder="Senha de 6 dígitos">
         </div>
         <button type="submit" class="btn-primary" style="width: 100%; justify-content: center;">Enviar Transferência</button>
       </form>
@@ -680,10 +689,6 @@
         <div class="form-group" style="margin-bottom: 12px;">
           <label>Nome no Cartão</label>
           <input type="text" class="form-input" id="addHolder" required placeholder="Ex: NOME COMPLETO">
-        </div>
-        <div class="form-group" style="margin-bottom: 20px;">
-          <label>Confirmação por Senha</label>
-          <input type="password" class="form-input" id="addPassword" required placeholder="Insira sua senha de 6 dígitos">
         </div>
         <button type="submit" class="btn-primary" style="width: 100%; justify-content: center;">Cadastrar Cartão</button>
       </form>
@@ -754,6 +759,69 @@
       }
     }
 
+    /* ==========================================================================
+       NOVA FUNCIONALIDADE: LOGOUT DO USUÁRIO
+       ========================================================================== */
+    async function handleLogout() {
+      if (!confirm("Deseja realmente encerrar sua sessão?")) return;
+
+      try {
+        await fetch(`${API_BASE_URL}/logout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+      } catch (error) {
+        console.error("Erro ao realizar logout na API:", error);
+      } finally {
+        // Limpa armazenamento local do navegador e redireciona para login
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = "/login";
+      }
+    }
+
+    /* ==========================================================================
+       CHAVE DE TRANSFERÊNCIA DA API
+       ========================================================================== */
+    async function openTransferKeyModal() {
+      openModal('transferKeyModal');
+      await fetchTransferKey();
+    }
+
+    async function fetchTransferKey() {
+      const valueEl = document.getElementById("keyValue");
+
+      valueEl.innerText = "Carregando...";
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/transfer-key`);
+        if (!response.ok) throw new Error(`HTTP Erro: ${response.status}`);
+
+        const json = await response.json();
+        const data = json.data !== undefined ? json.data : json;
+
+        valueEl.innerText = data.key || data.transferKey || "Chave não encontrada";
+      } catch (error) {
+        console.error("Erro ao carregar chave de transferência:", error);
+        valueEl.innerText = "Erro ao obter chave";
+      }
+    }
+
+    function copyTransferKey() {
+      const keyText = document.getElementById("keyValue").innerText;
+      if (keyText && keyText !== "Carregando..." && keyText !== "Erro ao obter chave") {
+        navigator.clipboard.writeText(keyText);
+        const copyBtn = document.getElementById("copyKeyBtn");
+        copyBtn.innerText = "Copiado!";
+        setTimeout(() => {
+          copyBtn.innerText = "Copiar Chave";
+        }, 2000);
+      }
+    }
+
+    /* ==========================================================================
+       FUNÇÕES EXISTENTES
+       ========================================================================== */
     async function fetchCards() {
       try {
         const response = await fetch(`${API_BASE_URL}/cards`);
@@ -835,12 +903,6 @@
             <div>
               <div class="card-holder">${card.holder}</div>
               <div class="card-expiry">VAL: ${card.exp || '--/--'} ${card.blocked ? '(BLOQUEADO)' : ''}</div>
-            </div>
-            <div style="text-align: right;">
-              <div style="font-size: 11px; color: var(--gray-400);">Saldo</div>
-              <div style="font-size: 14px; font-weight: 700; color: var(--solar-gold);">
-                ${formatCurrency(card.balance || 0)}
-              </div>
             </div>
           </div>
         `;
@@ -935,48 +997,18 @@
       document.getElementById(modalId).classList.remove('active');
     }
 
-    // Nova função de Depósito com chamada real à API
-    async function handleDeposit(event) {
-      event.preventDefault();
-      const cardId = document.getElementById("depositCardId").value;
-      const value = document.getElementById("depositValue").value;
-      const password = document.getElementById("depositPassword").value;
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/deposits`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cardId, value, password })
-        });
-        
-        if (response.ok) {
-          alert("Depósito realizado com sucesso!");
-        } else {
-          alert("Erro ao realizar depósito!");
-        }
-        
-        closeModal('depositModal');
-        document.getElementById('depositForm').reset();
-        loadAllAppData();
-      } catch (error) {
-        console.error("Erro no depósito:", error);
-      }
-    }
-
-    // Função de Transferência atualizada enviando dados do cartão para a API
     async function handleTransfer(event) {
       event.preventDefault();
       const destination = document.getElementById("transferDest").value;
       const value = document.getElementById("transferValue").value;
       const cardNumber = document.getElementById("transferCardNumber").value;
       const cvv = document.getElementById("transferCardCvv").value;
-      const password = document.getElementById("transferCardPassword").value;
 
       try {
         const response = await fetch(`${API_BASE_URL}/transfers`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ destination, value, cardNumber, cvv, password })
+          body: JSON.stringify({ destination, value, cardNumber, cvv })
         });
         
         if (response.ok) {
@@ -996,13 +1028,12 @@
     async function handleAddCard(event) {
       event.preventDefault();
       const holder = document.getElementById("addHolder").value.toUpperCase();
-      const password = document.getElementById("addPassword").value;
 
       try {
         const response = await fetch(`${API_BASE_URL}/cards`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ holder, password })
+          body: JSON.stringify({ holder })
         });
 
         if (!response.ok) throw new Error("Erro ao cadastrar");

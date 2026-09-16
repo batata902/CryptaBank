@@ -104,41 +104,6 @@ class User:
         return True
 
 
-    def transfer(self, destiny, value) -> bool:
-        value = int(value)
-
-        if value > self.balance:
-            return False
-
-        current_date: str = datetime.now().strftime("%d/%m/&Y:%H-%M")
-        
-        with db() as (conn, cur):
-            try:
-                cur.execute('BEGIN IMMEDIATE') # Impede race conditions aqui
-
-                dest = cur.execute('SELECT * FROM users WHERE key=?;', (destiny,)).fetchone()
-
-                if dest:
-                    cur.execute('UPDATE users SET balance=balance - ? WHERE id=?', (value, self.id))
-                    if cur.rowcount == 0:
-                        conn.rollback()
-                        return False
-
-                    cur.execute('UPDATE users SET balance=balance + ? WHERE id=?', (value, dest['id']))
-
-                    cur.execute('INSERT INTO transfers(source, destiny, value, date) VALUES(?, ?, ?, ?)', (self.id, dest['id'], value, current_date))
-
-                    conn.commit()
-                    self._balance -= int(value)
-
-                    return True
-                
-            except (sqlite3.Error, ValueError):
-                conn.rollback()
-                return False
-
-        return False
-
 @dataclass
 class Transfers:
     id: int
@@ -213,7 +178,7 @@ class Cards:
         with db() as (conn, cur):
             cur.execute(
                 'INSERT OR IGNORE INTO cards(holder, number, cvv, brand, exp, blocked, owner) VALUES(?, ?, ?, ?, ?, ?, ?)', 
-                (name, card_num, "".join([str(random.randint(0, 9)) for _ in range(3)]), 'CryptaB', '04/30', 0, 0, user.id)
+                (name, card_num, "".join([str(random.randint(0, 9)) for _ in range(3)]), 'CryptaB', '04/30', 0, user.id)
             )
 
             try:
@@ -248,3 +213,55 @@ class Cards:
             conn.commit()
 
         return True
+
+    @staticmethod
+    def get_cards_infos(card_number: str) -> dict | None:
+        with db() as (_, cur):
+            card = cur.execute('SELECT * FROM cards WHERE number=?;', (card_number,)).fetchone()
+        if not card:
+            return None
+
+        return dict(card)
+
+    @staticmethod
+    def transfer(user_id: int, destiny: str, value: int, card_number: str, cvv: str) -> bool:
+
+            current_user: User = User.load_user(user_id)
+            current_card: dict = Cards.get_cards_infos(card_number)
+            if not current_card:
+                return False
+
+            if current_card['cvv'] != cvv:
+                return False
+            
+            if value > current_user.balance:
+                return False
+    
+            current_date: str = datetime.now().strftime("%d/%m/&Y:%H-%M")
+            
+            with db() as (conn, cur):
+                try:
+                    cur.execute('BEGIN IMMEDIATE') # Impede race conditions aqui
+    
+                    dest = cur.execute('SELECT * FROM users WHERE key=?;', (destiny,)).fetchone()
+    
+                    if dest:
+                        cur.execute('UPDATE users SET balance=balance - ? WHERE id=?', (value, current_user.id))
+                        if cur.rowcount == 0:
+                            conn.rollback()
+                            return False
+    
+                        cur.execute('UPDATE users SET balance=balance + ? WHERE id=?', (value, dest['id']))
+    
+                        cur.execute('INSERT INTO transfers(source, destiny, value, date) VALUES(?, ?, ?, ?)', (current_user.id, dest['id'], value, current_date))
+    
+                        conn.commit()
+                        current_user._balance -= int(value)
+    
+                        return True
+                    
+                except (sqlite3.Error, ValueError):
+                    conn.rollback()
+                    return False
+    
+            return False

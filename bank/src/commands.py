@@ -142,15 +142,17 @@ def update_key(session: Session, args: list[str]) -> bytes:
 @bank.command('TRANSFER', help='TRANSFER an x value to a y account (Ex: TRANSFER conta_y valor_x)')
 @require_auth
 def transfer(session: Session, args: list) -> bytes:
-    if len(args) == 2:
-        destiny = args[0] 
+    if len(args) == 4:
+        destiny: str = args[0] 
+        card_number: str = args[2]
+        cvv: str = args[3]
 
         try:
             value = int(float(args[1]) * 100)
         except ValueError:
             return Response.render_response('Invalid value', 'E')
 
-        if session.user.transfer(destiny, value):
+        if Cards.transfer(session.user.id, destiny, value, card_number, cvv):
             return Response.render_response(f'Transferência para {destiny} no valor de R$ {value / 100} bem sucedida', 'S')
         
         return Response.render_response(f'Não é possível transferir R$ {value / 100} para {destiny}.', 'E')
@@ -192,17 +194,22 @@ def password(session: Session, args) -> bytes:
 
 @bank.command('IMPORT', help='Importa uma sessão para o banco')
 def import_(session: Session, args) -> bytes:
-    session_bytes = base64.b64decode(args[0])
-
     try:
-        desserial_session: Session = pickle.loads(session_bytes)
+        session_bytes = base64.b64decode(args[0])
     except:
         return Response.render_response('Erro ao carregar sessão', 'E')
 
     try:
+        desserial_session: Session = pickle.loads(session_bytes)
+    except Exception as e:
+        print(f'Erro: {type(e).__name__}: {e!r}')
+        return Response.render_response('Erro ao carregar sessão', 'E')
+
+    try:
         session.load_session(desserial_session)
-    except AttributeError:
-        return Response.render_response('Arquivo de sessão inválido', 'E')
+    except AttributeError as e:
+        print(f'Erro ao carregar sessão: {e!r}')
+        return Response.render_response('Sessão inválida', 'E')
 
     return Response.render_response('WELCOME', 'S')
 
