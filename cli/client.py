@@ -11,6 +11,7 @@ G = '\033[32m'  # Verde (Sucesso)
 E = '\033[m'    # Reset
 C = '\033[36m'  # Ciano (Menus/Destaques)
 
+
 class BankCli:
     def __init__(self, addr: str, port: int, session_file: str = None):
         self.addr: str = addr
@@ -22,18 +23,18 @@ class BankCli:
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         
         try:
-            self.sock.settimeout(10.0) 
+            self.sock.settimeout(10.0)
             self.sock.connect((self.addr, self.port))
-            self.sock.settimeout(None) 
+            self.sock.settimeout(None)
             
             banner: str = self.sock.recv(4096).decode('utf-8').strip()
             if banner:
                 print(banner)
 
-            # Tenta autenticar via argumento se foi passado
+            # Tenta autenticar via arquivo passado por parâmetro CLI
             if self.session_file:
                 if not self._import_session_from_file(self.session_file):
-                    print(self.format_error("Falha ao importar sessão da linha de comando. Indo para o menu manual."))
+                    print(self.format_error("Falha ao importar sessão. Direcionando para o menu de autenticação."))
                     if not self.auth_menu():
                         return
             else:
@@ -62,23 +63,30 @@ class BankCli:
                 print(self.format_error("A conexão com o servidor foi perdida."))
                 sys.exit(1)
 
-            return json.loads(raw_data)
+            parsed = json.loads(raw_data)
+            return parsed if isinstance(parsed, dict) else {"status": "S", "data": parsed}
+            
         except json.JSONDecodeError:
             print(self.format_error('Resposta inválida (JSON) do servidor'), file=sys.stderr)
-            return {"status": 100, "data": "Erro de decodificação do servidor"}
+            return {"status": "E", "data": "Erro de decodificação do servidor"}
         except Exception as e:
             print(self.format_error(f'Erro durante envio do comando: {e}'), file=sys.stderr)
-            return {"status": 100, "data": str(e)}
+            return {"status": "E", "data": str(e)}
+
+    def _is_error(self, response: dict) -> bool:
+        """Verifica se a resposta do servidor indica um erro."""
+        status = response.get('status')
+        return status in ['E', 100]
 
     def _import_session_from_file(self, filepath: str) -> bool:
-        """Lê o arquivo e envia para o servidor."""
+        """Lê a sessão em formato Base64/pickle do arquivo e envia ao servidor."""
         try:
             with open(filepath, 'r') as f:
                 session_data = f.read().strip()
             
             response = self._send_and_recv(f'IMPORT {session_data}')
             
-            if response.get('status') == 100:
+            if self._is_error(response):
                 print(self.format_error('Erro ao importar a sessão: ' + str(response.get('data'))))
                 return False
             
@@ -89,15 +97,16 @@ class BankCli:
             return False
 
     def auth_menu(self) -> bool:
-        """Menu interativo de autenticação."""
+        """Menu interativo de autenticação e cadastro."""
         while True:
-            print(f"\n{C}=== CryptaBank - Login ==={E}")
-            print("1. Fazer Login (Usuário e Senha)")
-            print("2. Importar arquivo de sessão (.dat)")
+            print(f"\n{C}=== CryptaBank - Login / Cadastro ==={E}")
+            print("1. Fazer Login")
+            print("2. Registrar Novo Usuário")
+            print("3. Importar Arquivo de Sessão (.dat)")
             print("0. Sair")
             
             try:
-                escolha = input("Escolha uma opção: ").strip()
+                escolha = input("\nEscolha uma opção: ").strip()
             except EOFError:
                 return False
 
@@ -107,6 +116,8 @@ class BankCli:
                     os.system('clear' if os.name == 'posix' else 'cls')
                     return True
             elif escolha == '2':
+                self.do_register()
+            elif escolha == '3':
                 if self.interactive_import():
                     input(f"\n{C}[Pressione Enter para continuar...]{E}")
                     os.system('clear' if os.name == 'posix' else 'cls')
@@ -116,12 +127,55 @@ class BankCli:
             else:
                 print(self.format_error("Opção inválida!"))
             
-            # Se falhar no login ou errar a opção, pausa e limpa a tela para tentar de novo
             input(f"\n{C}[Pressione Enter para tentar novamente...]{E}")
             os.system('clear' if os.name == 'posix' else 'cls')
 
+    def do_register(self) -> bool:
+        """Realiza o cadastro de novos usuários."""
+        print(f"\n{C}--- Novo Cadastro ---{E}")
+        user = input('Username: ').strip()
+        password = input('Password: ').strip()
+
+        if not user or not password:
+            print(self.format_error("Usuário e senha não podem ser vazios."))
+            return False
+
+        response = self._send_and_recv(f'REGISTER "{user}" "{password}"')
+        if self._is_error(response):
+            print(self.format_error(f"Falha no cadastro: {response.get('data')}"))
+            return False
+
+        print(self.format_success("Usuário registrado com sucesso! Faça login para acessar."))
+        return True
+
+    def do_login(self) -> bool:
+        """Inicia a autenticação em duas etapas (LOGIN -> PASSWORD)."""
+        try:
+            user_input = input('Username: ').strip()
+            if not user_input:
+                return False
+            
+            res_login = self._send_and_recv(f'LOGIN {user_input}')
+            if self._is_error(res_login):
+                print(self.format_error(res_login.get('data', 'Erro ao enviar usuário')))
+                return False
+
+            pass_input = input('Password: ').strip()
+            res_pass = self._send_and_recv(f'PASSWORD {pass_input}')
+            
+            if not self._is_error(res_pass) and res_pass.get('data') == 'WELCOME':
+                print(self.format_success('Autenticado com sucesso!'))
+                return True
+            
+            print(self.format_error('Usuário ou senha inválidos.'))
+            return False
+                
+        except EOFError:
+            print("\nOperação cancelada pelo usuário.")
+            sys.exit(0)
+
     def interactive_import(self) -> bool:
-        """Menu para listar e escolher arquivo de importação de sessão."""
+        """Lista e escolhe arquivo de sessão (.dat) no diretório atual."""
         dat_files = glob("*.dat")
         
         print(f"\n{C}--- Arquivos de sessão encontrados ---{E}")
@@ -141,7 +195,7 @@ class BankCli:
         
         filepath = ""
         if escolha == 'm':
-            filepath = input("Digite o caminho completo para o arquivo de sessão: ").strip()
+            filepath = input("Digite o caminho do arquivo de sessão: ").strip()
         elif escolha.isdigit() and 1 <= int(escolha) <= len(dat_files):
             filepath = dat_files[int(escolha) - 1]
         else:
@@ -153,40 +207,8 @@ class BankCli:
 
         return self._import_session_from_file(filepath)
 
-    def do_login(self) -> bool:
-        try:
-            user_input = input('Username: ').strip()
-            
-            # Envia username
-            self.sock.send(f'LOGIN {user_input}'.encode('utf-8'))
-            raw_res = self.sock.recv(1024).decode('utf-8').strip()
-            if not raw_res: return False
-            res = json.loads(raw_res)
-            
-            if res.get('data') == 'OK':
-                pass_input = input('Password: ').strip()
-                # Envia senha
-                self.sock.send(f'PASSWORD {pass_input}'.encode('utf-8'))
-                raw_res = self.sock.recv(1024).decode('utf-8').strip()
-                res = json.loads(raw_res)
-                
-                if res.get('data') == 'WELCOME':
-                    print(self.format_success('Autenticado com sucesso!'))
-                    return True
-            
-            print(self.format_error('Usuário ou senha inválidos.'))
-            return False
-                
-        except EOFError:
-            print("\nOperação cancelada pelo usuário.")
-            sys.exit(0)
-        except json.JSONDecodeError:
-            print(self.format_error("Resposta inesperada do servidor durante o login."))
-            return False
-
     def main_menu(self) -> None:
-        """Menu principal abstraído com as operações bancárias."""
-        # Limpa a tela logo que entra no menu principal
+        """Menu principal com as operações atualizadas."""
         os.system('clear' if os.name == 'posix' else 'cls')
 
         while True:
@@ -195,8 +217,9 @@ class BankCli:
             print("2. Ver Informações da Conta")
             print("3. Realizar Transferência")
             print("4. Extrato de Transferências")
-            print("5. Atualizar Chave de Transferência")
-            print("6. Exportar Sessão")
+            print("5. Gerenciar Cartões")
+            print("6. Atualizar Chave da Conta")
+            print("7. Exportar Sessão")
             print("0. Sair")
 
             try:
@@ -209,10 +232,8 @@ class BankCli:
                 print(self.format_success('Conexão encerrada'))
                 break
 
-            # Limpa a tela (o menu sai) para mostrar apenas o resultado do comando
             os.system('clear' if os.name == 'posix' else 'cls')
 
-            # Mapeamento das opções
             if escolha == '1':
                 self._handle_command('BALANCE')
             elif escolha == '2':
@@ -220,28 +241,58 @@ class BankCli:
             elif escolha == '3':
                 self.interactive_transfer()
             elif escolha == '4':
-                self._handle_command('LIST_T')
+                self._handle_command('TRANSACTIONS')
             elif escolha == '5':
-                self.interactive_update_key()
+                self.cards_menu()
             elif escolha == '6':
+                self.interactive_update_key()
+            elif escolha == '7':
                 self.interactive_export()
             else:
                 print(self.format_error("Opção inválida!"))
 
-            # Segura a tela para o usuário ler o que o servidor respondeu
             input(f"\n{C}[Pressione Enter para continuar...]{E}")
-            # Limpa a tela novamente para desenhar um novo Menu Principal limpo
             os.system('clear' if os.name == 'posix' else 'cls')
 
+    def cards_menu(self) -> None:
+        """Submenu para gerenciamento de cartões."""
+        print(f"\n{C}=== Gestão de Cartões ==={E}")
+        print("1. Listar Cartões")
+        print("2. Criar Novo Cartão")
+        print("3. Bloquear/Desbloquear Cartão")
+        print("4. Deletar Cartão")
+        print("0. Voltar")
+
+        sub = input("\nEscolha uma opção: ").strip()
+
+        if sub == '1':
+            self._handle_command('CARDS')
+        elif sub == '2':
+            holder = input("Nome do titular impresso no cartão: ").strip()
+            if holder:
+                self._handle_command(f'CREATE card "{holder}"')
+        elif sub == '3':
+            card_id = input("ID do Cartão: ").strip()
+            status = input("Status de bloqueio (1 = Bloquear, 0 = Desbloquear): ").strip()
+            if card_id and status in ['0', '1']:
+                self._handle_command(f'UPDATE card {card_id} {status}')
+            else:
+                print(self.format_error("Parâmetros inválidos."))
+        elif sub == '4':
+            card_id = input("ID do Cartão a deletar: ").strip()
+            if card_id:
+                self._handle_command(f'DELETE card {card_id}')
+
     def _handle_command(self, cmd: str):
-        """Envia um comando simples e lida com a resposta padrão."""
+        """Envia comando simples e lida com resposta formatada."""
         response = self._send_and_recv(cmd)
-        if response.get('status') == 100:
+        if self._is_error(response):
             print(self.format_error(response.get('data', 'Unknown Error')))
         else:
             print(self.format_success(response.get('data', '')))
 
     def interactive_transfer(self):
+        """Transferência adaptada para o novo protocolo (4 argumentos)."""
         print(f"\n{C}--- Nova Transferência ---{E}")
         destiny = input("Conta de destino: ").strip()
         if not destiny: return
@@ -249,30 +300,36 @@ class BankCli:
         value = input("Valor a transferir (Ex: 150.50): ").strip()
         if not value: return
 
-        # Envia o comando no formato original esperado pelo servidor
-        cmd = f"TRANSFER {destiny} {value}"
+        card_number = input("Número do cartão utilizado: ").strip()
+        if not card_number: return
+
+        cvv = input("CVV do cartão: ").strip()
+        if not cvv: return
+
+        cmd = f"TRANSFER {destiny} {value} {card_number} {cvv}"
         self._handle_command(cmd)
 
     def interactive_update_key(self):
-        print(f"\n{C}--- Atualizar Chave ---{E}")
+        """Atualização de chave adaptada ao protocolo UPDATE key <valor>."""
+        print(f"\n{C}--- Atualizar Chave da Conta ---{E}")
         new_key = input("Digite a nova chave: ").strip()
         if not new_key: return
         
-        cmd = f"UPDATE {new_key}"
+        cmd = f"UPDATE key {new_key}"
         self._handle_command(cmd)
 
     def interactive_export(self):
+        """Solicita a serialização da sessão e salva em arquivo local."""
         print(f"\n{C}--- Exportar Sessão ---{E}")
         response = self._send_and_recv('EXPORT')
         
-        if response.get('status') == 100:
+        if self._is_error(response):
             print(self.format_error(response.get('data', 'Erro ao gerar exportação.')))
             return
 
         data = response.get('data', '')
-        
         default_name = "session.dat"
-        filepath = input(f"Digite o caminho para salvar o arquivo (Enter para './{default_name}'): ").strip()
+        filepath = input(f"Salvar em (Enter para './{default_name}'): ").strip()
         
         if not filepath:
             filepath = default_name
@@ -280,7 +337,7 @@ class BankCli:
         try:
             with open(filepath, 'w') as f:
                 f.write(data)
-            print(self.format_success(f'Sessão salva com sucesso em -> {filepath}'))
+            print(self.format_success(f'Sessão salva em -> {filepath}'))
         except Exception as e:
             print(self.format_error(f"Falha ao salvar o arquivo: {e}"))
 
@@ -317,10 +374,9 @@ class BankCli:
 
 def main():
     parser = argparse.ArgumentParser(description="Cliente para o servidor CryptaBank")
-    parser.add_argument('addr', type=str, help='Endereço ip do servidor da CryptaBank')
-    # O default e o nargs='?' são necessários para que o usuário não seja obrigado a passar a porta
-    parser.add_argument('port', type=int, nargs='?', default=9000, help='Porta do servidor CryptaBank (default=9000)')
-    parser.add_argument('-s', '--session', type=str, help='Carrega um arquivo de sessão para o CryptaBank')
+    parser.add_argument('addr', type=str, help='Endereço IP do servidor CryptaBank')
+    parser.add_argument('port', type=int, nargs='?', default=9000, help='Porta do servidor (default=9000)')
+    parser.add_argument('-s', '--session', type=str, help='Caminho para arquivo de sessão (.dat)')
     
     args = parser.parse_args()
 
@@ -329,7 +385,7 @@ def main():
     try:
         bank.connect_and_run()
     except KeyboardInterrupt:
-        print('\nO usuário escolheu sair (Ctrl+C)')
+        print('\n\nO usuário escolheu sair (Ctrl+C)')
         sys.exit(0)
 
 if __name__ == '__main__':

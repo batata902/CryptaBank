@@ -2,3 +2,5 @@
 exploit/
 *.db
 bank/src/__pycache__
+web/src/__pycache__
+cli/src/__pycache__

@@ -1,0 +1,11 @@
+services:
+  cryptabank:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+      - "9000:9000"
+    volumes:
+      - ./bank/src/database:/bank/bank/src/database
+    restart: unless-stopped
