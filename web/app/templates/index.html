@@ -167,13 +167,7 @@
       <div class="hero-content">
         <h1 id="hero-title">Somos incansáveis para que você tenha o controle do seu dinheiro.</h1>
         <p class="hero-subtitle">Peça seu Cartão de Crédito e sua Conta do CryptaBank. Transparente, seguro e 100% digital.</p>
-        <form class="cpf-form hero-form" id="hero-form" aria-label="Formulário para solicitar o CryptaBank">
-          <div class="field-group">
-            <label for="cpf-hero">CPF</label>
-            <input type="text" id="cpf-hero" name="cpf" class="cpf-input" placeholder="Digite seu CPF" inputmode="numeric" autocomplete="off" aria-label="Digite seu CPF" required>
-          </div>
-          <button type="submit" class="btn btn-primary">Continuar</button>
-        </form>
+        <a href="{{ url_for('login') }}" class="btn btn-primary">Continuar</a>
       </div>
       <!-- Cartão 3D isolado sem caixa preta -->
       <div class="hero-visual" id="hero-visual" role="img" aria-label="Ilustração de um cartão de crédito dourado do CryptaBank em 3D">
@@ -328,13 +322,7 @@
   <section class="final-cta" aria-labelledby="final-cta-title">
     <div class="container">
       <h2 id="final-cta-title">Peça seu Cartão de Crédito e sua Conta do CryptaBank agora.</h2>
-      <form class="cpf-form" aria-label="Formulário final para solicitar o CryptaBank">
-        <div class="field-group">
-          <label for="cpf-final" class="visually-hidden">CPF</label>
-          <input type="text" id="cpf-final" name="cpf" class="cpf-input" placeholder="Digite seu CPF" inputmode="numeric" autocomplete="off" aria-label="Digite seu CPF" required>
-        </div>
-        <button type="submit" class="btn btn-primary">Quero ser CryptaBank</button>
-      </form>
+        <a href="{{ url_for('login') }}" class="btn btn-primary">Quero ser CryptaBank</a>
     </div>
   </section>
 

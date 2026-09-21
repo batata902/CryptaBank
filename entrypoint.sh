@@ -3,10 +3,10 @@
 set -e
 
 (
-    cd /bank/bank
+    cd /bank/bank/
     python3 main.py
 ) &
 
-cd /bank/web
+cd /bank/web/
 
 exec python3 main.py
