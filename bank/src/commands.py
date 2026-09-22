@@ -42,7 +42,7 @@ def create(session: Session, args) -> bytes:
     if len(args) < 2:
         return Response.render_response('Argumentos insuficientes', 'E')
     if args[0].lower() == 'card':
-        holder: str = args[1:]
+        holder: str = " ".join(args[1:])
         success: bool = Cards.create_card(session.user, holder)
 
         if success:
