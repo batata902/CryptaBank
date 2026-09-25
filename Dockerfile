@@ -11,6 +11,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY entrypoint.sh .
+COPY flag.txt .
 RUN chmod +x entrypoint.sh
 
 EXPOSE 5000
